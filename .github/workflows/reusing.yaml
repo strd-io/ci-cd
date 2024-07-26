@@ -1,0 +1,15 @@
+name: Build com workflow dispatch
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  call-workflow:
+    uses: Wechoo/workflow-templates/.github/workflows/template-gradle.yml@master
+  #   with:
+  #     test: false

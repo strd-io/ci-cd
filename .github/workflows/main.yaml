@@ -1,0 +1,49 @@
+name: Build em steps diferentes
+
+on:
+  push:
+    branches:
+      - 'master'
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+  detekt:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Run detekt
+      run: ./gradlew detekt
+
+  tests:
+    needs: detekt
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Run tests
+      run: ./gradlew test
+
+  build:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+      
+    - name: Run build
+      run: ./gradlew build
