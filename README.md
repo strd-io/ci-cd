@@ -35,7 +35,7 @@ O fluxo de trabalho é definido através de um ou mais arquivos do tipo `YAML` e
 Existem várias configurações que podem ser adicionadas no seu fluxo de trabalho, mas a base consiste geralmente em: 
 
 - O nome da action;
-- A partir de qual ação esse fluxo será disparado;
+- A partir de qual evento ou ação esse fluxo será disparado (pull request, master);
 - Os passos que serão executados para validar essa action.
 
 Ou seja, podemos resumir em:
