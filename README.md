@@ -45,3 +45,115 @@ name: # O nome do fluxo de trabalho será executado quando...
 on: # Alguma ação for disparada, por exemplo, abrir um pull request para a master e...
 jobs: # As etapas a seguir serão executadas.
 ```
+
+## Exemplo
+
+No repositório do [konvert](https://github.com/strd-io/konvert) vamos criar uma pasta onde colocaremos os nossos fluxos de trabalho especificado pela própria documentação: `.github/workflows` e criaremos dois contextos:
+
+https://github.com/strd-io/konvert/tree/master/.github/workflows
+
+- [ ] um de build que será executado para validar o pull request;
+- [ ] um de release que será executado na master.
+
+### Build
+
+Essa action será executada quando o pull request for aberto e as etapas de teste e detekt serão avaliadas para o sucesso do pull request. O interessante é que você pode colocar restrições para que o merge de um pull request possa ser feito. Etapas podem ser requeridas, approves.
+
+```yaml
+name: Build lib # nome do fluxo de trabalho
+
+on: # evento que será disparado, nesse caso, o pull request
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - ready_for_review
+
+jobs: # quais são as etapas de validação que serão realizadas
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Run detekt
+        run: ./gradlew detekt
+```
+
+Exemplo do resultado da action.
+
+![build](.github/images/build.png)
+
+Clicando para ver os detalhes, podemos ver a sequência dos passos que foram executados.
+
+![build steps](.github/images/build-steps.png)
+
+### Release
+
+Já essa action, ele só será disparada quando o pull request for mergeado na master ou quando um commit for realizado. A diferença dessa é que colocamos uma environment com uma restrição nas configurações do nosso repositório para que a etapa de release só seja executada a partir de um approve.
+
+Falaremos um pouco mais disso no próximo conteúdo.
+
+```yaml
+name: Publish package to GitHub Packages
+
+on:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Run detekt
+        run: ./gradlew detekt
+
+  publish:
+    needs: setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
+
+      - name: Publish package
+        run: ./gradlew publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Como adicionamos no ambiente um fluxo de aprovação, para que essa etapa seja executada e a publicação seja feita, é necessário aprovar por uma lista de usuários ou grupos que foi definido na regra do ambiente criada.
+
+![publish](.github/images/publish.png)
